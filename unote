@@ -1,0 +1,382 @@
+#!/usr/bin/wish
+
+# Copyright (c) 1998-2015 Alexey Michurin <a.michurin@gmail.com>
+#
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the "Software"), to deal in the Software without
+# restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons
+# to whom the Software is furnished to do so, subject to the
+# following conditions:
+#
+# The above copyright notice and this permission notice shall
+# be included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+# OR OTHER DEALINGS IN THE SOFTWARE.
+
+package require md5
+
+# working with windows
+
+proc create_label {create_new element text_opts font_opts} {
+    if {$create_new} {
+        # we have to create own font, not use TkDefaultFont
+        label $element -font [font create]
+        pack $element
+    }
+    $element configure {*}$text_opts
+    font configure [$element cget -font] {*}$font_opts
+}
+
+proc create_bar {create_new element w h b c1 c2 c3 percent} {
+    if {$create_new} {
+        canvas $element -highlightthickness 0
+        foreach tag {A B C} {
+            $element create rectangle 0 0 0 0 -width 0 -tag $tag
+        }
+        pack $element
+    }
+    $element configure -width $w -height $h
+    set f [expr { min(max(round($w * $percent / 100), 0), $w) }]
+    foreach {tag m v fill} [list \
+        A 0 $w $c1 \
+        B $b $w $c2 \
+        C $b $f $c3
+    ] {
+        $element itemconfigure $tag -fill $fill
+        $element coords $tag $m $m [expr {$v - $m}] [expr {$h - $m}]
+    }
+    pack $element
+}
+
+proc update_window {canonical options} {
+    set window_name ".win_$canonical"
+    set type [dict get $options type]
+    if {$type == {text}} {
+        set widget_name "$window_name.label"
+    } elseif {$type == {bar}} {
+        set widget_name "$window_name.canvas"
+    }
+    set create_new 1
+    foreach s [pack slaves $window_name] {
+        if {$s == $widget_name} {
+            set create_new 0
+        } else {
+            pack forget $s
+            destroy $s
+        }
+    }
+    if {$type == {text}} {
+        create_label $create_new $widget_name \
+            [dict get $options text] \
+            [dict get $options font]
+    } elseif {$type == {bar}} {
+        create_bar $create_new $widget_name \
+            {*}[dict get $options opts]
+    }
+}
+
+proc create_window {canonical geom} {
+    set window_name ".win_$canonical"
+    toplevel $window_name
+    wm title $window_name uNote
+    wm geometry $window_name $geom
+    wm overrideredirect $window_name 1
+    bind $window_name <1> [list remove_top $canonical]
+}
+
+proc delete_window {canonical} {
+    set window_name ".win_$canonical"
+    destroy $window_name
+}
+
+# working with specifiyd queue
+
+proc remove_top {canonical} {
+    upvar #0 "_q_$canonical" queue
+    set queue [lreplace $queue 0 0]
+    on_update_queue $canonical
+}
+
+proc add_to_queue {canonical msg} {
+    upvar #0 "_q_$canonical" queue
+    upvar #0 "_t_$canonical" timer
+    if {! [info exists queue]} {
+        set queue [list]
+        set timer {}
+        create_window $canonical [dict get $msg geometry]
+    }
+    # clear by id
+    set id [dict get $msg id]
+    set n [llength $queue]
+    while {$n > 0} {
+        incr n -1
+        set e [lindex $queue $n]
+        if {[dict get $e id] == $id} {
+            set queue [lreplace $queue $n $n]
+        }
+    }
+    set queue [linsert $queue 0 $msg]
+    on_update_queue $canonical
+}
+
+proc on_update_queue {canonical} {
+    upvar #0 "_q_$canonical" queue
+    upvar #0 "_t_$canonical" timer
+    if {$timer != {}} {
+        after cancel $timer
+    }
+    if {[llength $queue] == 0} {
+        unset queue
+        unset timer
+        delete_window $canonical
+        return
+    }
+    set top_msg [lindex $queue 0]
+    set timer [after \
+        [dict get $top_msg duration] \
+        [list remove_top $canonical]]
+    update_window $canonical [dict get $top_msg options]
+}
+
+# workin with messages
+
+proc process {msg} {
+    set geometry [dict get $msg geometry]
+    # queue name derived from geometry
+    set canonical [string tolower [::md5::md5 -hex $geometry]]
+    add_to_queue $canonical $msg
+}
+
+proc check_option_color {v} {
+    # color allowed:
+    # {#dddddd}
+    # {#ddd}
+    # {dddddd}
+    # {ddd}
+    # where d is hex degit
+    set x [string trim [string trim $v] {#}]
+    set l [string length $x]
+    if {$l == 3} {
+        set r [split $x {}]
+        set x {}
+        foreach t $r {
+            set x "$x$t$t"
+        }
+    } elseif {$l != 6} {
+        return {#880000}
+    }
+    if {! [string is xdigit $x]} {
+        return {#ff0000}
+    }
+    return "#$x"
+}
+
+proc dict_get_with_default {s k d} {
+    if {[dict exists $s $k]} {
+        return [dict get $s $k]
+    }
+    return $d
+}
+
+proc dict_get_flag {s k a b} {
+    if {[dict exists $s $k]} {
+        return $a
+    }
+    return $b
+}
+
+proc simple_named_options {usr_opts defs} {
+    set n [dict create]
+    foreach {t s d} $defs {
+        dict set n $t [dict_get_with_default $usr_opts $s $d]
+    }
+    return $n
+}
+
+proc simple_options_list {usr_opts defs} {
+    set n [list]
+    foreach {s d} $defs {
+        lappend n [dict_get_with_default $usr_opts $s $d]
+    }
+    return $n
+}
+
+proc notmalize_message {text_opts body} {
+    # options:
+    #   type
+    #   geometry
+    #   duration
+    #   service
+    #   fg
+    #   bg
+    #   bd
+    #   padx
+    #   pady
+    #   size
+    #   bold
+    #   percent
+    # split to pairs
+    set opts [dict create geometry -20+0 duration 2]
+    foreach pair [split $text_opts {,}] {
+        set a [string first {=} $pair]
+        if {$a < 0} {
+            set k $pair
+            set v {}
+        } else {
+            set k [string range $pair 0 [expr {$a - 1}]]
+            set v [string range $pair [expr {$a + 1}] end]
+        }
+        dict set opts [string trim $k] [string trim $v]
+    }
+    set msg [dict create]
+    dict set msg geometry [dict get $opts geometry]
+    dict set msg duration [expr [dict get $opts duration] * 1000]
+    if {[dict exists $opts service]} {
+        set service [dict get $opts service]
+    } else {
+        set service [join [list {AUTOID} [expr {
+            round(rand() * 10000)
+        }]] {_}]
+    }
+    dict set msg id $service
+    set options [dict create]
+    if {[dict exists $opts type]} {
+        set type [dict get $opts type]
+    } else {
+        set type text
+    }
+    # common options ckeck
+    foreach k {bd bg fg} {
+        if {[dict exists $opts $k]} {
+            dict set opts $k [check_option_color [dict get $opts $k]]
+        }
+    }
+    foreach k {padx pady percent size} {
+        if {[dict exists $opts $k]} {
+            if {! [string is digit [dict get $opts $k]]} {
+                # remove invalid data (without error any messages)
+                dict unset opts $k
+            }
+        }
+    }
+    # types
+    if {$type == {text}} {
+        set text_opts [simple_named_options $opts {
+            -bg bg #004444
+            -fg fg #00ffff
+            -padx padx 4
+            -pady pady 2
+        }]
+        set body [string trim $body]
+        if {$body == {}} {
+            set body {none}
+        }
+        if {[string length $body] > 60} {
+            set body [string range $body 0 58]
+            set body "$body…"
+        }
+        dict set text_opts -text $body
+        set font_opts [simple_named_options $opts {
+            -size size 14
+            -family family Helvetica
+        }]
+        dict set font_opts -weight [dict_get_flag $opts bold bold normal]
+        dict set options {text} $text_opts
+        dict set options {font} $font_opts
+    } elseif {$type == {bar}} {
+        set opts [simple_options_list $opts {
+            width 100
+            height 7
+            border 1
+            bd #009999
+            bg #000000
+            fg #00ffff
+            percent 50
+        }]
+        dict set options {opts} $opts
+    }
+    dict set options type $type
+    # final
+    dict set msg options $options
+    return $msg
+}
+
+proc accept_message {text_msg} {
+    set a [string first {|} $text_msg]
+    if {$a < 0} {
+        process [notmalize_message {} $text_msg]
+    } else {
+        process [notmalize_message \
+            [string range $text_msg 0 [expr {$a - 1}]] \
+            [string range $text_msg [expr {$a + 1}] end]]
+    }
+}
+
+# newwork
+
+array set network_data {}
+
+proc setup_channel {channel addr port} {
+    global network_data
+    chan configure $channel -blocking 0 -buffersize 4096
+    chan event $channel readable [list read_channel $channel]
+    set network_data($channel) {}
+    after 1000 close_channel $channel
+}
+
+proc read_channel {channel} {
+    global network_data
+    if {[chan eof $channel]} {
+        close_channel $channel
+    } else {
+        append network_data($channel) [chan read $channel]
+    }
+}
+
+proc close_channel {channel} {
+    global network_data
+    if {[info exists network_data($channel)]} {
+        after idle [list accept_message $network_data($channel)]
+        unset network_data($channel)
+        chan close $channel
+    }
+}
+
+# main
+
+wm withdraw .
+set about_message {
+    geometry -120-0
+    id 777
+    duration 3000
+    options {
+        type text
+        text {
+            -text {uNote | (c) Alexey Michurin 1998-1015 | alexey@michurin.net}
+            -bg #33aaff
+            -fg #000000
+            -padx 10
+            -pady 3
+        } font {
+            -size 12
+            -family Helvetica
+        }
+    }
+}
+set actual_name [tk appname uNote]
+if {$actual_name != {uNote}} {
+    send uNote [list process $about_message]
+    exit
+}
+socket -server setup_channel 7779
+process $about_message
