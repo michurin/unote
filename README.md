@@ -25,15 +25,15 @@ To run it automaticaly add it to `~/.xinitrc`.
 How to send message
 ===================
 
-Simples
+Simplest:
 
     echo '|Hello, world!' | nc localhost 7779
 
-Big red label at specified place, displayd 10 seconds
+Big red label at specified place, displayd 10 seconds:
 
     echo 'geometry=+10+10,fg=f00,bg=ff0,size=24,padx=120,duration=10|Hello, world!' | nc localhost 7779
 
-Green 80% bar
+Green 80% bar:
 
     echo 'type=bar,geometry=+10+10,percent=80,width=200,height=10,duration=10,fg=0f0,bg=000,bd=090|' | nc localhost 7779
 
