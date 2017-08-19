@@ -1,6 +1,6 @@
 #!/usr/bin/wish
 
-# Copyright (c) 1998-2015 Alexey Michurin <a.michurin@gmail.com>
+# Copyright (c) 1998-2017 Alexey Michurin <a.michurin@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -362,7 +362,7 @@ set about_message {
     options {
         type text
         text {
-            -text {uNote | (c) Alexey Michurin 1998-1015 | alexey@michurin.net}
+            -text {uNote | (c) Alexey Michurin 1998-2017 | alexey@michurin.net}
             -bg #33aaff
             -fg #000000
             -padx 10
