@@ -30,7 +30,7 @@ package require md5
 proc create_label {create_new element text_opts font_opts} {
     if {$create_new} {
         # we have to create own font, not use TkDefaultFont
-        label $element -font [font create]
+        label $element -wraplength 0 -font [font create]
         pack $element
     }
     $element configure {*}$text_opts
