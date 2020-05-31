@@ -23,6 +23,13 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 # OR OTHER DEALINGS IN THE SOFTWARE.
 
+# (c) 2020 Roman Dmytrenko <roman.webtex@gmail.com>
+#
+# Add percent text for bar
+#
+# add 'tc' parameter for percent text color
+#
+
 package require md5
 
 # working with windows
@@ -37,7 +44,11 @@ proc create_label {create_new element text_opts font_opts} {
     font configure [$element cget -font] {*}$font_opts
 }
 
-proc create_bar {create_new element w h b c1 c2 c3 percent} {
+
+# add $c4 - percent text color
+# add $font_opts
+
+proc create_bar {create_new element w h b c1 c2 c3 c4 percent font_opts} {
     if {$create_new} {
         canvas $element -highlightthickness 0
         foreach tag {A B C} {
@@ -55,6 +66,7 @@ proc create_bar {create_new element w h b c1 c2 c3 percent} {
         $element itemconfigure $tag -fill $fill
         $element coords $tag $m $m [expr {$v - $m}] [expr {$h - $m}]
     }
+    $element create text [expr ($w / 2) - 2 ] [expr ($h / 2) - 3 ] -fill $c4 -justify center -text $percent% -font $font_opts
     pack $element
 }
 
@@ -81,7 +93,8 @@ proc update_window {canonical options} {
             [dict get $options font]
     } elseif {$type == {bar}} {
         create_bar $create_new $widget_name \
-            {*}[dict get $options opts]
+            {*}[dict get $options opts] \
+            [dict get $options font]
     }
 }
 
@@ -220,6 +233,7 @@ proc notmalize_message {text_opts body} {
     #   fg
     #   bg
     #   bd
+    #   tc - new parameter for percent text color
     #   padx
     #   pady
     #   size
@@ -256,7 +270,7 @@ proc notmalize_message {text_opts body} {
         set type text
     }
     # common options ckeck
-    foreach k {bd bg fg} {
+    foreach k {bd bg fg tc} {
         if {[dict exists $opts $k]} {
             dict set opts $k [check_option_color [dict get $opts $k]]
         }
@@ -301,8 +315,18 @@ proc notmalize_message {text_opts body} {
             bd #009999
             bg #000000
             fg #00ffff
+            tc #ffff00
             percent 50
         }]
+
+        # add font config for create_bar
+        set font_opts [simple_named_options $opts {
+            -size size 16
+            -family family Helvetica
+        }]
+        dict set font_opts -weight [dict_get_flag $opts bold bold normal]
+        dict set options {font} $font_opts
+        
         dict set options {opts} $opts
     }
     dict set options type $type
@@ -362,7 +386,7 @@ set about_message {
     options {
         type text
         text {
-            -text {uNote | (c) Alexey Michurin 1998-2017 | alexey@michurin.net}
+            -text {uNote | (c) Alexey Michurin 1998-2017 | alexey@michurin.net | (c) Roman Dmytrenko 2020 | roman.webtex@gmail.com}
             -bg #33aaff
             -fg #000000
             -padx 10
