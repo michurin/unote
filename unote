@@ -1,6 +1,7 @@
 #!/usr/bin/wish
 
 # Copyright (c) 1998-2017 Alexey Michurin <a.michurin@gmail.com>
+# Copyright (c) 2020 Roman Dmytrenko <roman.webtex@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -23,13 +24,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 # OR OTHER DEALINGS IN THE SOFTWARE.
 
-# (c) 2020 Roman Dmytrenko <roman.webtex@gmail.com>
-#
-# Add percent text for bar
-#
-# add 'tc' parameter for percent text color
-#
-
 package require md5
 
 # working with windows
@@ -44,16 +38,14 @@ proc create_label {create_new element text_opts font_opts} {
     font configure [$element cget -font] {*}$font_opts
 }
 
-
-# add $c4 - percent text color
-# add $font_opts
-
 proc create_bar {create_new element w h b c1 c2 c3 c4 percent font_opts} {
+    variable text_label
     if {$create_new} {
         canvas $element -highlightthickness 0
         foreach tag {A B C} {
             $element create rectangle 0 0 0 0 -width 0 -tag $tag
         }
+        set text_label [$element create text [expr ($w / 2) - 2 ] [expr ($h / 2) - 3 ] -fill $c4 -justify center -font $font_opts]
         pack $element
     }
     $element configure -width $w -height $h
@@ -66,7 +58,7 @@ proc create_bar {create_new element w h b c1 c2 c3 c4 percent font_opts} {
         $element itemconfigure $tag -fill $fill
         $element coords $tag $m $m [expr {$v - $m}] [expr {$h - $m}]
     }
-    $element create text [expr ($w / 2) - 2 ] [expr ($h / 2) - 3 ] -fill $c4 -justify center -text $percent% -font $font_opts
+    $element itemconfigure $text_label -text $percent%
     pack $element
 }
 
@@ -226,19 +218,19 @@ proc simple_options_list {usr_opts defs} {
 
 proc notmalize_message {text_opts body} {
     # options:
-    #   type
-    #   geometry
-    #   duration
-    #   service
-    #   fg
-    #   bg
-    #   bd
-    #   tc - new parameter for percent text color
-    #   padx
-    #   pady
-    #   size
-    #   bold
-    #   percent
+    #   type     - message type (text | bar)
+    #   geometry - position in X-format
+    #   duration - seconds
+    #   service  - name of queues
+    #   fg       - foreground color
+    #   bg       - background color
+    #   bd       - border color
+    #   tc       - percent text color (for progress bar)
+    #   padx     - horisontal padding
+    #   pady     - vertical padding
+    #   size     - font size
+    #   bold     - bold flag
+    #   percent  - percents
     # split to pairs
     set opts [dict create geometry -20+0 duration 2]
     foreach pair [split $text_opts {,}] {
@@ -304,9 +296,7 @@ proc notmalize_message {text_opts body} {
             -size size 14
             -family family Helvetica
         }]
-        dict set font_opts -weight [dict_get_flag $opts bold bold normal]
         dict set options {text} $text_opts
-        dict set options {font} $font_opts
     } elseif {$type == {bar}} {
         set opts [simple_options_list $opts {
             width 100
@@ -318,17 +308,14 @@ proc notmalize_message {text_opts body} {
             tc #ffff00
             percent 50
         }]
-
-        # add font config for create_bar
         set font_opts [simple_named_options $opts {
             -size size 16
             -family family Helvetica
         }]
-        dict set font_opts -weight [dict_get_flag $opts bold bold normal]
-        dict set options {font} $font_opts
-        
         dict set options {opts} $opts
     }
+    dict set font_opts -weight [dict_get_flag $opts bold bold normal]
+    dict set options {font} $font_opts
     dict set options type $type
     # final
     dict set msg options $options
@@ -346,7 +333,7 @@ proc accept_message {text_msg} {
     }
 }
 
-# newwork
+# network
 
 array set network_data {}
 

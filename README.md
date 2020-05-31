@@ -62,6 +62,7 @@ Params are:
 * `fg`: foreground color
 * `bg`: background color
 * `bd`: border color
+* `tc`: percent text color (for progress bar)
 * `padx`: horisontal padding
 * `pady`: vertical padding
 * `size`: font size
