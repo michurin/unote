@@ -68,6 +68,7 @@ Params are:
 * `size`: font size
 * `family`: font family like `Droid Serif` (command `fc-list : family` show all font families on your X)
 * `bold`: bold flag
+* `justify`: text justification (left, right, center)
 * `percent`: percents (for progress bar)
 
 Windows and queues (`service`)

@@ -1,6 +1,6 @@
 #!/usr/bin/wish
 
-# Copyright (c) 1998-2017 Alexey Michurin <a.michurin@gmail.com>
+# Copyright (c) 1998-2020 Alexey Michurin <a.michurin@gmail.com>
 # Copyright (c) 2020 Roman Dmytrenko <roman.webtex@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person
@@ -26,6 +26,12 @@
 
 package require md5
 
+set VERSION {1.0}
+set AUTHORS {
+    {Copyright (c) 1998-2020 Alexey Michurin <a.michurin@gmail.com>}
+    {Copyright (c) 2020 Roman Dmytrenko <roman.webtex@gmail.com>}
+}
+
 # working with windows
 
 proc create_label {create_new element text_opts font_opts} {
@@ -45,7 +51,7 @@ proc create_bar {create_new element w h b c1 c2 c3 c4 percent font_opts} {
         foreach tag {A B C} {
             $element create rectangle 0 0 0 0 -width 0 -tag $tag
         }
-        set text_label [$element create text [expr ($w / 2) - 2 ] [expr ($h / 2) - 3 ] -fill $c4 -justify center -font $font_opts]
+        set text_label [$element create text [expr {$w / 2}] [expr {$h / 2}] -fill $c4 -anchor center -font $font_opts]
         pack $element
     }
     $element configure -width $w -height $h
@@ -230,6 +236,8 @@ proc notmalize_message {text_opts body} {
     #   pady     - vertical padding
     #   size     - font size
     #   bold     - bold flag
+    #   justify  - justify text (left, right, center)
+    #   family   - font family (fc-list)
     #   percent  - percents
     # split to pairs
     set opts [dict create geometry -20+0 duration 2]
@@ -282,6 +290,7 @@ proc notmalize_message {text_opts body} {
             -fg fg #00ffff
             -padx padx 4
             -pady pady 2
+            -justify justify center
         }]
         set body [string trim $body]
         if {$body == {}} {
@@ -292,13 +301,9 @@ proc notmalize_message {text_opts body} {
             set body "$body…"
         }
         dict set text_opts -text $body
-        set font_opts [simple_named_options $opts {
-            -size size 14
-            -family family Helvetica
-        }]
         dict set options {text} $text_opts
     } elseif {$type == {bar}} {
-        set opts [simple_options_list $opts {
+        set bar_opts [simple_options_list $opts {
             width 100
             height 7
             border 1
@@ -308,12 +313,12 @@ proc notmalize_message {text_opts body} {
             tc #ffff00
             percent 50
         }]
-        set font_opts [simple_named_options $opts {
-            -size size 16
-            -family family Helvetica
-        }]
-        dict set options {opts} $opts
+        dict set options {opts} $bar_opts
     }
+    set font_opts [simple_named_options $opts {
+        -size size 16
+        -family family Helvetica
+    }]
     dict set font_opts -weight [dict_get_flag $opts bold bold normal]
     dict set options {font} $font_opts
     dict set options type $type
@@ -365,29 +370,35 @@ proc close_channel {channel} {
 
 # main
 
-wm withdraw .
-set about_message {
+set greeting [join [list "uNote $VERSION" {*}$AUTHORS] "\n"]
+set about_message [subst {
     geometry -120-0
     id 777
     duration 3000
     options {
         type text
         text {
-            -text {uNote | (c) Alexey Michurin 1998-2017 | alexey@michurin.net | (c) Roman Dmytrenko 2020 | roman.webtex@gmail.com}
-            -bg #33aaff
+            -text {$greeting}
+            -bg #99cc99
             -fg #000000
             -padx 10
             -pady 3
+            -justify left
         } font {
-            -size 12
+            -weight bold
+            -size 10
             -family Helvetica
         }
     }
-}
-set actual_name [tk appname uNote]
-if {$actual_name != {uNote}} {
+}]
+
+set app_name {uNote}
+
+wm withdraw .
+set actual_name [tk appname $app_name]
+if {$actual_name != $app_name} {
     send uNote [list process $about_message]
-    exit
+    exit 1
 }
 socket -server setup_channel 7779
 process $about_message
