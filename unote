@@ -1,6 +1,6 @@
 #!/usr/bin/wish
 
-# Copyright (c) 1998-2020 Alexey Michurin <a.michurin@gmail.com>
+# Copyright (c) 1998-2021 Alexey Michurin <a.michurin@gmail.com>
 # Copyright (c) 2020 Roman Dmytrenko <roman.webtex@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person
@@ -26,9 +26,9 @@
 
 package require md5
 
-set VERSION {1.0}
+set VERSION {1.0.1}
 set AUTHORS {
-    {Copyright (c) 1998-2020 Alexey Michurin <a.michurin@gmail.com>}
+    {Copyright (c) 1998-2021 Alexey Michurin <a.michurin@gmail.com>}
     {Copyright (c) 2020 Roman Dmytrenko <roman.webtex@gmail.com>}
 }
 
@@ -277,7 +277,7 @@ proc notmalize_message {text_opts body} {
     }
     foreach k {padx pady percent size} {
         if {[dict exists $opts $k]} {
-            if {! [string is digit [dict get $opts $k]]} {
+            if {! [string is integer -strict [dict get $opts $k]]} {
                 # remove invalid data (without error any messages)
                 dict unset opts $k
             }
