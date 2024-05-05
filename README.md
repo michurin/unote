@@ -27,15 +27,21 @@ How to send message
 
 Simplest:
 
-    echo '|Hello, world!' | nc localhost 7779
+```sh
+echo '|Hello, world!' | nc localhost 7779
+```
 
 Big red label at specified place, displayd 10 seconds:
 
-    echo 'geometry=+10+10,fg=f00,bg=ff0,size=24,padx=120,duration=10|Hello, world!' | nc localhost 7779
+```sh
+echo 'geometry=+10+10,fg=f00,bg=ff0,size=24,padx=120,duration=10|Hello, world!' | nc localhost 7779
+```
 
 Green 80% bar:
 
-    echo 'type=bar,geometry=+10+10,percent=80,width=200,height=10,duration=10,fg=0f0,bg=000,bd=090|' | nc localhost 7779
+```sh
+echo 'type=bar,geometry=+10+10,percent=80,width=200,height=10,duration=10,fg=0f0,bg=000,bd=090|' | nc localhost 7779
+```
 
 Message structure and params
 ============================
@@ -48,7 +54,9 @@ Message consists of two parts, separated by pipe ("|"). First
 
 So, simplest text message is "`|OK`":
 
-    echo '|OK' | nc localhost 7779
+```sh
+echo '|OK' | nc localhost 7779
+```
 
 Params overview
 ---------------
@@ -89,43 +97,49 @@ Code snippets
 Call from Perl
 --------------
 
-    #!/usr/bin/perl
+```perl
+#!/usr/bin/perl
 
-    use strict;
-    use warnings;
-    use Socket;
+use strict;
+use warnings;
+use Socket;
 
-    my $message = 'DONE!';
+my $message = 'DONE!';
 
-    my $host = 'localhost';
-    my $port = 7779;
-    socket(SOCK, PF_INET, SOCK_STREAM, (getprotobyname('tcp'))[2]);
-    connect(SOCK, sockaddr_in($port, inet_aton($host)));
-    send(
-        SOCK,
-        'geometry=+0+10,bg=99f,fg=000,size=24,padx=12,duration=10,family=Ubuntu Condensed|' .
-        $message,
-        0
-    );
+my $host = 'localhost';
+my $port = 7779;
+socket(SOCK, PF_INET, SOCK_STREAM, (getprotobyname('tcp'))[2]);
+connect(SOCK, sockaddr_in($port, inet_aton($host)));
+send(
+    SOCK,
+    'geometry=+0+10,bg=99f,fg=000,size=24,padx=12,duration=10,family=Ubuntu Condensed|' .
+    $message,
+    0
+);
+```
 
 Call from Python (v2 and v3)
 ----------------------------
 
-    #!/usr/bin/python
+```python
+#!/usr/bin/python
 
-    import socket
+import socket
 
-    HOST = 'localhost'
-    PORT = 7779
+HOST = 'localhost'
+PORT = 7779
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((HOST, PORT))
-    s.sendall(b'|Hello, world')
-    s.close()
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, PORT))
+s.sendall(b'|Hello, world')
+s.close()
+```
 
 Create ssh tunnel
 -----------------
 
 You can add to your `~/.ssh/config`:
 
-    RemoteForward 7779 localhost:7779
+```sshconfig
+RemoteForward 7779 localhost:7779
+```
