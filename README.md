@@ -135,6 +135,37 @@ s.sendall(b'|Hello, world')
 s.close()
 ```
 
+Complete useful sh example
+--------------------------
+
+Script to send message with two possible color schemes.
+
+```sh
+#!/bin/sh
+
+sets='service=remote,duration=20,bg=#224,fg=#99f,size=40,padx=30,family=Ubuntu,geometry=+700-0'
+
+if test "a$#" = 'a2'
+then
+  if test "a$1" = 'a--small-green'
+  then
+    sets='service=remote,duration=20,bg=#222,fg=#0f0,size=14,padx=10,family=Ubuntu,geometry=+200+0'
+  else
+    echo "Ignore option $1"
+  fi
+  shift
+fi
+
+mess=$1
+if test -z "$mess"
+then
+  mess="`uname -n`: Complete"
+fi
+
+echo -n "$sets|$mess" |
+nc localhost 7779
+```
+
 Create ssh tunnel
 -----------------
 
