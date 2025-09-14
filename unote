@@ -36,7 +36,7 @@ set AUTHORS {
 
 proc create_label {create_new element text_opts font_opts} {
     if {$create_new} {
-        # we have to create own font, not use TkDefaultFont
+        # we have to create own font, do not use TkDefaultFont
         label $element -wraplength 0 -font [font create]
         pack $element
     }
@@ -110,7 +110,7 @@ proc delete_window {canonical} {
     destroy $window_name
 }
 
-# working with specifiyd queue
+# working with specified queue
 
 proc remove_top {canonical} {
     upvar #0 "_q_$canonical" queue
@@ -159,7 +159,7 @@ proc on_update_queue {canonical} {
     update_window $canonical [dict get $top_msg options]
 }
 
-# workin with messages
+# working with messages
 
 proc process {msg} {
     set geometry [dict get $msg geometry]
@@ -269,7 +269,7 @@ proc notmalize_message {text_opts body} {
     } else {
         set type text
     }
-    # common options ckeck
+    # common options check
     foreach k {bd bg fg tc} {
         if {[dict exists $opts $k]} {
             dict set opts $k [check_option_color [dict get $opts $k]]
