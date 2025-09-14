@@ -98,7 +98,7 @@ proc update_window {canonical options} {
 
 proc create_window {canonical geom} {
     set window_name ".win_$canonical"
-    toplevel $window_name
+    toplevel $window_name -class "uNote"
     wm title $window_name uNote
     wm geometry $window_name $geom
     wm overrideredirect $window_name 1
